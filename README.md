@@ -1,285 +1,199 @@
-# philippine-vaccination-campaign-synthetic-dataset
-Physics-informed synthetic public health dataset simulating 800K+ vaccination records across 17 PH regions. Features bi-exponential efficacy waning, Arrhenius cold chain modeling, and logistic no-show prediction. Python · Pandas · Scikit-learn.
+# 🇵🇭 Philippine National Multi-Disease Vaccination Campaign — Synthetic Dataset
 
-# 🇵🇭 Philippine National Multi-Disease Vaccination Campaign
-### Synthetic Dataset Generator & Analytical Framework
-#### 2024–2028 Longitudinal | EIF Cohort 10 — Eskwelabs
+### A physics-informed, causally-structured synthetic dataset for public-health analytics
+**2024–2028 Longitudinal · 17 Regions · 6 Vaccines · ~1.17M rows · EIF Cohort 10 (Eskwelabs)**
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-2.1%2B-150458?logo=pandas&logoColor=white)
-![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3%2B-F7931E?logo=scikit-learn&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-2.x-150458?logo=pandas&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3%2B-F7931E?logo=scikit-learn&logoColor=white)
+![statsmodels](https://img.shields.io/badge/statsmodels-0.14%2B-8B0000)
 ![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey)
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
+![Status](https://img.shields.io/badge/build-validated-brightgreen)
 
 ---
 
 ## Overview
 
-This project generates a **high-fidelity synthetic dataset** simulating a national multi-disease vaccination campaign across the Philippines from 2024 to 2028. It was developed as part of the Eskwelabs Industry Fellows (EIF) Cohort 10 program.
+This repository generates and analyzes a **high-fidelity synthetic dataset** simulating a
+national multi-disease vaccination campaign across the Philippines (2024–2028), built for
+the Eskwelabs Industry Fellows (EIF) Cohort 10 program.
 
-The dataset is grounded in **eight interdependent mathematical models** drawn from epidemiology, pharmacology, and public health logistics — making it suitable for use in learning challenges, data analytics training, dashboard development, and machine learning research.
+What sets it apart from a typical synthetic dataset:
 
-> **Domain:** Public Health / Epidemiology  
-> **Target analyst role:** Public Health Data Analyst  
-> **Dataset size:** ~800,000+ rows across 8 tables  
-> **Vaccines modeled:** COVID-19 Booster, Influenza, MMR, HPV, Hepatitis B, Rabies PEP  
-> **Geographic scope:** 17 Philippine regions, 82 provinces (PSA 2024 population weights)
+- **Eight interdependent mathematical engines** drawn from epidemiology, pharmacology, and logistics — outputs of one engine feed the next.
+- **A built-in causal treatment** (`reminder_sent`) with a *known, heterogeneous* effect, so the dataset can teach and validate **causal inference** (ATE / CATE), not just prediction.
+- **A full model-validity layer**: stationarity testing, multicollinearity (VIF), dimensionality (PCA), parsimony (L1/Occam), and generator **benchmarking**.
+
+> **Domain:** Public Health / Epidemiology  **Analyst role:** Public Health Analyst
+> **Vaccines:** COVID-19 Booster, Influenza, MMR, HPV, Hepatitis B, Rabies PEP
+> **Scope:** 17 PH regions, 82 provinces, PSA 2024 population weights
 
 ---
 
-## Repository Structure
+## Repository structure
 
 ```
-philippine-vaccination-campaign/
-│
+philippine-vaccination-campaign-synthetic-dataset/
 ├── notebooks/
-│   ├── 00_project_overview.ipynb       # Mathematical framework & challenge statement
-│   ├── 01_dataset_cols.ipynb           # Full schema definitions with Mermaid ERD
-│   ├── 03_dataset_generator.ipynb      # Synthetic data generator (run this first)
-│   └── 02_eda_notebook.ipynb           # Exploratory data analysis (run this second)
-│
-├── figures/                            # All EDA output visualizations (15 figures)
-├── requirements.txt                    # Python dependencies
+│   ├── 00_project_overview.ipynb     # Math framework, causal design, validity methodology, IEEE refs
+│   ├── 01_dataset_cols.ipynb         # Full schema (8 tables) + Mermaid ERD
+│   ├── 03_dataset_generator.ipynb    # Synthetic generator (run FIRST)
+│   └── 02_eda_notebook.ipynb         # EDA: descriptive → ML → time series → causal (run SECOND)
+├── figures/                          # Exported analysis figures
+├── requirements.txt
+├── LICENSE                           # CC BY-NC 4.0
 ├── .gitignore
 └── README.md
 ```
 
-> **Note:** The `data/` folder is excluded from this repository (see `.gitignore`).  
-> Run `03_dataset_generator.ipynb` to regenerate the full dataset locally.  
-> Changing `RANDOM_SEED` produces a statistically equivalent but numerically different dataset — mimicking natural variance.
+> The `data/` folder is **git-ignored** (the full dataset is ~85 MB). Run
+> `03_dataset_generator.ipynb` to regenerate all 8 tables locally; changing `RANDOM_SEED`
+> produces a statistically equivalent dataset with natural variance.
 
 ---
 
-## Mathematical Model Architecture
+## The eight simulation engines
 
-The generator is built on **eight interdependent simulation engines**. Outputs from one engine feed as inputs to another, replicating how real-world public health variables co-determine each other.
-
-| Engine | Model | Key Equation |
+| Engine | Model | Core equation |
 |---|---|---|
-| A. Population | Poisson demand model | $N_r \sim \text{Poisson}(\lambda_r)$, weighted by PSA 2024 regional population |
-| B. Behavioral | Logistic no-show model | $P(\text{no-show}) = \sigma(\beta_0 + \beta_1 d + \beta_2 s + \beta_3 \delta + \beta_4 h + \beta_5 r)$ |
-| C. Immunological | Bi-exponential waning | $E(t) = E_\text{peak}[\phi e^{-\lambda_f t} + (1-\phi)e^{-\lambda_s t}]$ |
-| D. Cold Chain | Arrhenius degradation | $P_\text{retained} = e^{-k(T) \cdot \Delta t}$, $k(T) = Ae^{-E_a/RT}$ |
-| E. Pharmacovigilance | Age-stratified AEFI | $\text{AEFI} \sim \text{Poisson}(\mu_{v,g})$ per WHO guidelines |
-| F. Epidemiological | Herd immunity threshold | $R_\text{eff} = R_0(1 - p_\text{eff})$, $p_\text{HIT} = 1 - 1/R_0$ |
-| G. Logistics | Inventory balance | $S_{t+1} = S_t + R_t - V_t - W_t$ |
-| H. Seasonal | PH calendar forcing | $A(t) = \bar{A}[1 + \psi \sin(2\pi(t - t_\text{peak})/365)]$ |
+| **A. Population** | Poisson demand, PSA-weighted | $N_r \sim \text{Poisson}(\lambda_r)$ |
+| **B. No-show (behavioral)** | Logistic + **randomized treatment** | $P=\sigma(\beta^\top x - T(\gamma_0+\gamma_1 b))$ |
+| **C. Efficacy waning** | Bi-exponential decay | $E(t)=E_{\text{peak}}[\phi e^{-\lambda_f t}+(1-\phi)e^{-\lambda_s t}]$ |
+| **D. Cold chain** | Arrhenius degradation | $P_{\text{ret}}=e^{-k(T)\Delta t},\ k=Ae^{-E_a/RT}$ |
+| **E. AEFI** | Age-stratified Poisson (WHO) | $\text{AEFI}\sim\text{Poisson}(\mu_{v,g})$ |
+| **F. Herd immunity** | Effective reproduction number | $R_{\text{eff}}=R_0(1-p_{\text{eff}})$ |
+| **G. Inventory** | Discrete-time stock balance | $S_{t+1}=S_t+R_t-V_t-W_t$ |
+| **H. Seasonal forcing** | Sine + PH health calendar | $A(t)=\bar A[1+\psi\sin(2\pi(t-t_p)/365)]$ |
 
 ---
 
-## Dataset Schema
+## ⭐ Causal inference: the `reminder_sent` treatment
 
-The dataset follows a **Medallion Architecture** with Silver (observable) and Gold (derived) layers.
+The appointment reminder is a **randomized treatment** baked into Engine B:
 
-```mermaid
-erDiagram
-    dim_sites {
-        string site_id PK
-        string region
-        string site_type
-        string cold_chain_tier
-        float rurality_index
-        int cold_chain_capacity
-    }
-    dim_people {
-        string person_id PK
-        string age_group
-        string socioeconomic_class
-        string priority_group
-        string assigned_site_id FK
-        float distance_to_site_km
-    }
-    fact_appointments {
-        string appt_id PK
-        string person_id FK
-        string site_id FK
-        string vaccine_type
-        int dose_number
-        string status
-        float noshow_probability
-    }
-    fact_vaccination_events {
-        string event_id PK
-        string appt_id FK
-        string person_id FK
-        float potency_at_admin
-        float efficacy_at_admin
-        boolean series_complete
-        string aefi_severity
-        string linked_shipment_id FK
-    }
-    fact_inventory_shipments {
-        string shipment_id PK
-        string site_id FK
-        string vaccine_type
-        boolean cold_chain_breach
-        float potency_retained
-        float wastage_rate
-        string vvm_status
-    }
-    gold_coverage {
-        string coverage_id PK
-        string region
-        string vaccine_type
-        float coverage_rate
-        float effective_coverage
-        float herd_immunity_gap
-        float R_eff
-    }
-    gold_efficacy_waning {
-        string waning_id PK
-        string person_id FK
-        string vaccine_type
-        int days_since_final_dose
-        float estimated_protection
-        string protection_tier
-    }
-    gold_cold_chain_risk {
-        string risk_id PK
-        string site_id FK
-        string shipment_id FK
-        float financial_loss_php
-        string risk_tier
-        string action_required
-    }
-    dim_sites ||--o{ dim_people : "assigned to"
-    dim_sites ||--o{ fact_appointments : "hosts"
-    dim_sites ||--o{ fact_vaccination_events : "administers at"
-    dim_sites ||--o{ fact_inventory_shipments : "receives"
-    dim_people ||--o{ fact_appointments : "schedules"
-    dim_people ||--o{ fact_vaccination_events : "receives"
-    dim_people ||--o{ gold_efficacy_waning : "tracked in"
-    fact_appointments ||--o| fact_vaccination_events : "fulfilled by"
-    fact_inventory_shipments ||--o{ fact_vaccination_events : "supplies"
-    fact_inventory_shipments ||--|| gold_cold_chain_risk : "assessed as"
-```
+- `reminder_sent` $\sim \text{Bernoulli}(0.65)$, **independent of all covariates** and assigned *before* the outcome → ignorability $Y(0),Y(1)\perp T\mid X$ holds, so **ATE and CATE are identified** without an instrument.
+- The effect is **heterogeneous**: a reminder lowers no-show log-odds by $(\gamma_0+\gamma_1\cdot\text{barrier\_score})$, where `barrier_score` $=\text{clip}(0.40\,r+0.30\,s/5+0.30\min(d/20,1),0,1)$. High-barrier (rural, low-SEC, distant) patients benefit most.
 
-| Table | Layer | Rows | Columns |
-|---|---|---|---|
-| `dim_sites` | Silver | ~150 | 14 |
-| `dim_people` | Silver | ~5,000 | 17 |
-| `fact_appointments` | Silver | ~49,000 | 16 |
-| `fact_vaccination_events` | Silver | ~27,000 | 23 |
-| `fact_inventory_shipments` | Silver | ~36,000 | 24 |
-| `gold_coverage` | Gold | ~2,040 | 15 |
-| `gold_efficacy_waning` | Gold | ~642,000 | 9 |
-| `gold_cold_chain_risk` | Gold | ~36,000 | 9 |
-| **Total** | | **~800,000+** | **127** |
+The EDA recovers the embedded ground truth three ways and acts on it:
+
+| Method | Result (this build) |
+|---|---|
+| ATE — inverse probability weighting (IPW) | **+0.125** attendance |
+| ATE — doubly-robust (AIPW) | **+0.125** attendance |
+| ATE — bootstrap 95% CI | **[+0.118, +0.132]** (significant) |
+| CATE — T-Learner, by SEC | **+0.099 (B) → +0.149 (E)** — biggest lift for the hardest-to-reach |
+| Optimal policy | Targeting by CATE beats uniform reminder blasts under a fixed SMS budget |
 
 ---
 
-## Sample Visualizations
+## Model-validity layer
 
-**Regional coverage heatmap — all 17 PH regions × 6 vaccines**
-![Regional Coverage Heatmap](figures/fig02_regional_heatmap.png)
+Beyond prediction, the EDA validates that the data behaves correctly under the methods an analyst would actually use:
 
-**Herd immunity gap tracker & MMR R_eff trend**
-![Herd Immunity](figures/fig09_herd_immunity.png)
-
-**Bi-exponential vaccine efficacy waning curves**
-![Efficacy Waning](figures/fig16_waning.png)
-
-**No-show prediction model — ROC curves, feature importance, calibration**
-![ML No-show Model](figures/fig13_ml_noshow.png)
+- **Stationarity (ADF + KPSS)** before SARIMA — opposite-null tests run together; campaign phases flagged as regimes (Markov-switching / BSTS noted as the honest long-run alternative).
+- **Multicollinearity (VIF)** — $\text{VIF}_j = 1/(1-R_j^2)$ for every predictor; all features land below the severity threshold.
+- **Curse of dimensionality (PCA)** — intrinsic-dimensionality scree (components for 90/95% variance).
+- **Occam's razor (L1 / LASSO)** — a sparse, auditable logistic model compared against gradient boosting; near-identical AUC justifies the interpretable model for policy use (Rudin, 2019).
+- **Inference efficiency** — the generator reports wall-clock time, peak memory, and rows/second; the ~1M-row efficacy-waning table is produced by **NumPy broadcasting**, not a Python loop.
 
 ---
 
-## How to Run
+## Dataset schema (Medallion architecture)
 
-### Option A — Google Colab (recommended)
+| Table | Layer | Rows | Cols |
+|---|---|---:|---:|
+| `dim_sites` | Silver | 150 | 14 |
+| `dim_people` | Silver | 5,000 | 20 |
+| `fact_appointments` | Silver | 49,186 | 17 |
+| `fact_vaccination_events` | Silver | 41,430 | 23 |
+| `fact_inventory_shipments` | Silver | 36,139 | 24 |
+| `gold_coverage` | Gold | 2,040 | 15 |
+| `gold_efficacy_waning` | Gold | 1,001,080 | 9 |
+| `gold_cold_chain_risk` | Gold | 36,139 | 9 |
+| **Total** | | **1,171,164** | |
 
-1. Open `notebooks/03_dataset_generator.ipynb` in Colab
-2. Run **Cell 0** only (`!pip install -q faker`) → **Runtime → Restart session**
-3. **Runtime → Run all** — generates all 8 CSV tables (~800K rows)
-4. Save data to Google Drive:
+`fact_appointments` carries the causal columns: **`reminder_sent`** (treatment) and
+**`barrier_score`** (drives the heterogeneous effect). Full column definitions and a
+Crow's-Foot Mermaid ERD are in `notebooks/01_dataset_cols.ipynb`.
+
+---
+
+## Sample visualizations
+
+**Regional coverage — 17 regions × 6 vaccines**
+![Regional coverage heatmap](figures/fig02_regional_heatmap.png)
+
+**Treatment-effect heterogeneity (CATE) — who benefits most from a reminder**
+![CATE by subgroup](figures/fig23_cate.png)
+
+**Model diagnostics — multicollinearity (VIF) & intrinsic dimensionality (PCA)**
+![VIF and PCA diagnostics](figures/fig22_diagnostics.png)
+
+**Bi-exponential efficacy waning per vaccine**
+![Efficacy waning curves](figures/fig16_waning.png)
+
+---
+
+## How to run
+
+### Google Colab (recommended)
+
+1. Open `notebooks/03_dataset_generator.ipynb`. Run **Cell 0** (`!pip install -q faker`), then **Runtime → Restart session**.
+2. **Runtime → Run all** — generates all 8 tables (~3 min, ~1.17M rows) and prints a generation benchmark.
+3. Persist to Drive so notebook 02 can read it from a fresh session:
    ```python
-   from google.colab import drive
-   drive.mount('/content/drive')
-   import shutil
-   shutil.copytree('data', '/content/drive/MyDrive/vaccination_data', dirs_exist_ok=True)
+   from google.colab import drive; drive.mount('/content/drive')
+   import shutil; shutil.copytree('data', '/content/drive/MyDrive/vaccination_data', dirs_exist_ok=True)
    ```
-5. Open `notebooks/02_eda_notebook.ipynb` in a new Colab tab
-6. Set `DATA_ROOT = '/content/drive/MyDrive/vaccination_data'`
-7. Uncomment the pip install cell → **Runtime → Restart session → Run all**
+4. Open `notebooks/02_eda_notebook.ipynb`, set `DATA_ROOT = '/content/drive/MyDrive/vaccination_data'`, uncomment the install cell, **Restart session → Run all**.
 
-### Option B — Local environment
+Run order: **`03` → `02`**. Notebooks `00` and `01` are documentation and run standalone.
+
+### Local
 
 ```bash
-git clone https://github.com/<your-username>/philippine-vaccination-campaign.git
-cd philippine-vaccination-campaign
+git clone https://github.com/cs-loliva/philippine-vaccination-campaign-synthetic-dataset.git
+cd philippine-vaccination-campaign-synthetic-dataset
 pip install -r requirements.txt
 jupyter notebook
 ```
 
-Run notebooks in this order: `03` → `02` (notebooks `00` and `01` are documentation only).
+---
+
+## Challenge statement (for learners)
+
+**L1 — Descriptive:** lowest-coverage regions per vaccine; multi-dose completion by region × SEC.
+**L2 — Diagnostic:** statistically significant SEC equity gap? distance from MMR/COVID herd immunity?
+**L3 — Predictive, Causal & Prescriptive:** SARIMA 2029 forecast (test stationarity first); **estimate the ATE/CATE of `reminder_sent`**; solve **optimal reminder allocation** under a fixed budget; site-expansion optimization.
 
 ---
 
-## Challenge Statement
+## Tech stack
 
-The Philippine Department of Health (DOH) is reviewing the 2024–2028 National Immunization Program to identify gaps in vaccine coverage, cold chain integrity, and equity of access.
-
-**Level 1 — Descriptive Analytics**
-- Which regions have the lowest vaccination coverage per vaccine type?
-- What is the dose completion rate for multi-dose vaccines by region and socioeconomic class?
-
-**Level 2 — Diagnostic Analytics**
-- Is there a statistically significant equity gap between SEC A/B and D/E beneficiaries?
-- Which regions are furthest from herd immunity for measles (MMR) and COVID-19?
-
-**Level 3 — Predictive & Prescriptive Analytics**
-- Forecast 2029 vaccination volumes using time series methods (SARIMA / Prophet)
-- Given a fixed budget, which provinces should receive new facilities to maximize coverage gain?
-
----
-
-## Tech Stack
-
-- **Data generation:** Python, NumPy, Pandas, Faker
-- **Statistical modeling:** SciPy, Statsmodels
-- **Machine learning:** Scikit-learn (Logistic Regression, Random Forest, Gradient Boosting)
-- **Visualization:** Matplotlib, Seaborn
-- **Architecture:** Medallion Architecture (Silver / Gold layers)
-- **Documentation:** Jupyter Notebooks, Mermaid ERD, IEEE citation format
+Python · NumPy · Pandas · Faker · SciPy · **statsmodels** (SARIMA, ADF/KPSS) ·
+**scikit-learn** (logistic, RF, GBM, PCA, propensity/T-Learner) · Matplotlib · Seaborn ·
+Medallion architecture · Mermaid ERD · IEEE references.
 
 ---
 
 ## References
 
-All mathematical parameters are grounded in peer-reviewed literature and official guidelines. Full IEEE-format references are included in `00_project_overview.ipynb`. Key sources:
-
-- Philippine Statistics Authority, *2024 Population Projections by Region*, PSA Manila, 2024
-- World Health Organization, *Immunological Basis for Immunization Series*, WHO/IVB/18.10, 2018
-- N. Andrews *et al.*, "Duration of Protection against COVID-19," *NEJM*, vol. 386, 2022
-- Department of Health Philippines, *National Immunization Program Coverage Survey 2023*
-- S. B. Hanson *et al.*, "Arrhenius Modeling of Vaccine Thermal Stability," *Vaccine*, vol. 37, 2019
-
----
-
-## About
-
-Developed as part of the **Eskwelabs Industry Fellows (EIF) Cohort 10** program.  
-Domain expertise in pharmaceutical sciences and medical research applied to public health data modeling.
+All parameters are grounded in peer-reviewed literature and official guidance; full
+IEEE-format citations (34 sources, including causal inference — Rubin, Pearl, Imbens &
+Rubin, Künzel et al.; stationarity — Dickey-Fuller, KPSS, Hamilton; and interpretability —
+Rudin, Belsley et al.) are in `notebooks/00_project_overview.ipynb`.
 
 ---
 
 ## Copyright & License
 
-Copyright © 2026 - Lenard Amiel Oliva. All rights reserved.
+**Copyright © 2026 — Lenard Amiel Oliva. All rights reserved.**
 
-The notebooks, mathematical models, schema designs, and written documentation in this repository are the original work of the author, developed during the Eskwelabs EIF Cohort 10 program.
-
-This work is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
-
-You are free to:
-- **Share** — copy and redistribute the material in any medium or format
-- **Adapt** — remix, transform, and build upon the material
-
-Under the following terms:
-- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made
-- **NonCommercial** — You may not use the material for commercial purposes without explicit written permission from the author
+Licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License
+(CC BY-NC 4.0)**. You may share and adapt the material with attribution, for
+non-commercial purposes. See [`LICENSE`](LICENSE).
 
 [![CC BY-NC 4.0](https://licensebuttons.net/l/by-nc/4.0/88x31.png)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-> The synthetic dataset produced by running this generator is not confidential and may be freely used for educational and research purposes per the terms above.  
-> Real patient data is not used or represented anywhere in this project.
+> No real patient data is used or represented. The synthetic dataset is suitable for
+> education and research under the terms above.
